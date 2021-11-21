@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIM</title>
+</head>
+<style>
+    body {
+        min-height: 100vh;
+        margin: 0px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #content {
+        border: 2px black solid;
+        padding: 10px;
+    }
+
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    td,
+    th {
+        border: 1px black solid;
+    }
+
+    #empezar,
+    #stepfinish {
+        width: 100%;
+    }
+
+    #msg1,
+    #msg2,
+    #start,
+    #Terminarturno {
+        display: none;
+    }
+</style>
+<script>
+    let pilas = 2;
+    let valores = [];
+    let exponente = 0;
+    validar = (obj, max, min, value) => {
+        if (/P\d/.test(obj.id) && valores.length != 0) {
+            let cantidad = 0;
+            for (let i = 0; i < valores.length; i++) {
+                if (valores[i] != document.getElementById("P" + (i + 1)).value) {
+                    cantidad++;
+                }
+            }
+            if (cantidad > 1) {
+                obj.value = max;
+                alert("solo puedes reducir la cantidad de una pila por turno")
+                return;
+            }
+        }
+        if (parseInt(value) >= parseInt(max)) {
+            obj.value = max;
+        } else if (parseInt(value) <= parseInt(min)) {
+            obj.value = min;
+        } else if (value.includes("-")) { 
+            obj.value = parseInt(max);
+            console.log(obj.value);
+        } else {
+            obj.value = Math.floor(value);
+        }
+    }
+    pilasGen = () => {
+        pilas = document.getElementById("pilas").value;
+        if (pilas < 2) {
+            alert("No se puede jugar con menos de 2 pilas");
+        } else {
+            for (i = 1; i <= pilas; i++) {
+                document.getElementById("P" + i).disabled = 0;
+                document.getElementById("P" + i).max = 100;
+                document.getElementById("P" + i).value = "";
+            }
+            valores = [];
+            exponente = 0;
+            document.getElementById("msg1").style.display = "block";
+            document.getElementById("start").style.display = "table-row";
+        }
+    }
+    empezar = () => {
+        for (i = 1; i <= pilas; i++) {
+            valores.push(document.getElementById("P" + i).value);
+            if (valores[i - 1] == 0) {
+                valores = [];
+                alert("No deje una de las pilas vacias");
+                return;
+            } else {
+                document.getElementById("P" + i).max = valores[i - 1];
+            }
+        }
+        calcularexponente();
+        let turno = Paridad();
+        if (turno) {
+            document.getElementById("msg2").style.display = "block";
+            document.getElementById("Terminarturno").style.display = "table-row";
+        } else {
+            calcular(false);
+        }
+        document.getElementById("msg1").style.display = "none";
+        document.getElementById("start").style.display = "none";
+    }
+    calcularexponente = () => {
+        let mayor = Math.max(...valores);
+        exponente = 0;
+        for (exponente; mayor > Math.pow(2, exponente + 1); exponente++) { }
+    }
+    Paridad = () => {
+        let valoresbin = [];
+        for (let j = 0; j < valores.length; j++) {
+            valoresbin.push([])
+            for (let i = exponente; i >= 0; i--) {
+                valoresbin[j].push((valores[j] & Math.pow(2, i)) == Math.pow(2, i) ? 1 : 0);
+            }
+        }
+        let valoressumbin = [];
+        for (let i = exponente; i >= 0; i--) {
+            valoressumbin.push(0);
+            for (let j = 0; j < valores.length; j++) {
+                valoressumbin[exponente - i] += valoresbin[j][exponente - i];
+            }
+            valoressumbin[exponente - i] = (valoressumbin[exponente - i] & 1)
+        }
+        return valoressumbin.reduce((acum, actu) => acum + actu) == 0;
+    }
+    calcular = (bol) => {
+        if (bol) {
+            let cantidad = 0;
+            for (let i = 0; i < valores.length; i++) {
+                if (valores[i] != document.getElementById("P" + (i + 1)).value) {
+                    cantidad++;
+                }
+            }
+            if (cantidad != 1) {
+                alert("Tienes que reducir una pila")
+                return;
+            }
+        }
+        document.getElementById("msg2").style.display = "none";
+        document.getElementById("Terminarturno").style.display = "none";
+        valores = [];
+        for (i = 1; i <= pilas; i++) {
+            valores.push(document.getElementById("P" + i).value);
+            document.getElementById("P" + i).max = valores[i - 1];
+            document.getElementById("P" + (i)).style.color = "black";
+        }
+        if (valores.reduce((acum, actu) => acum + actu) == 0) {
+            alert("Ganaste")
+            window.location.reload(true)
+        }
+        for (let i = 0; !Paridad() && i < valores.length; i++) {
+            for (valores[i] = valores[i] - 1; !Paridad() && valores[i] >= 0; valores[i]--) { }
+            if (valores[i] >= 0) {
+                document.getElementById("P" + (i + 1)).value = valores[i];
+                document.getElementById("P" + (i + 1)).max = valores[i];
+                document.getElementById("P" + (i + 1)).style.color = "red";
+            } else {
+                valores[i] = document.getElementById("P" + (i + 1)).value;
+                if (i == pilas - 1) {
+                    alert("error fatal")
+                    window.location.reload(true)
+                }
+            }
+        }
+        if (valores.reduce((acum, actu) => acum + actu) == 0) {
+            alert("perdiste ☺ ♥")
+            window.location.reload(true)
+        }
+        document.getElementById("msg2").style.display = "block";
+        document.getElementById("Terminarturno").style.display = "table-row";
+    }
+</script>
+
+<body>
+    <div id="content">
+        <h3>
+            <center>NIM</center>
+        </h3>
+        <p>Seleccione la cantidad de pilas <input type="number" value="2" id="pilas" placeholder="Pilas" min="0"
+                max="10" onchange="validar(this,max,min,value)" oninput="validar(this,max,min,value)"> <input
+                type="button" onclick="pilasGen()" value="Ok"></p>
+        <p id="msg1">Seleccione los valores iniciales</p>
+        <p id="msg2">Tu turno</p>
+        <table>
+            <tr>
+                <th colspan="5">Pilas</th>
+            </tr>
+            <tr>
+                <th>Pila 1</th>
+                <th>Pila 2</th>
+                <th>Pila 3</th>
+                <th>Pila 4</th>
+                <th>Pila 5</th>
+            </tr>
+            <tr>
+                <th><input type="number" id="P1" min=0 disabled max=100 onchange="validar(this,max,min,value)"
+                        oninput="validar(this,max,min,value)"></th>
+                <th><input type="number" id="P2" min=0 disabled max=100 onchange="validar(this,max,min,value)"
+                        oninput="validar(this,max,min,value)"></th>
+                <th><input type="number" id="P3" min=0 disabled max=100 onchange="validar(this,max,min,value)"
+                        oninput="validar(this,max,min,value)"></th>
+                <th><input type="number" id="P4" min=0 disabled max=100 onchange="validar(this,max,min,value)"
+                        oninput="validar(this,max,min,value)"></th>
+                <th><input type="number" id="P5" min=0 disabled max=100 onchange="validar(this,max,min,value)"
+                        oninput="validar(this,max,min,value)"></th>
+            </tr>
+            <tr>
+                <th>Pila 6</th>
+                <th>Pila 7</th>
+                <th>Pila 8</th>
+                <th>Pila 9</th>
+                <th>Pila 10</th>
+            </tr>
+            <tr>
+                <th><input type="number" id="P6" min=0 disabled max=100 onchange="validar(this,max,min,value)"
+                        oninput="validar(this,max,min,value)"></th>
+                <th><input type="number" id="P7" min=0 disabled max=100 onchange="validar(this,max,min,value)"
+                        oninput="validar(this,max,min,value)"></th>
+                <th><input type="number" id="P8" min=0 disabled max=100 onchange="validar(this,max,min,value)"
+                        oninput="validar(this,max,min,value)"></th>
+                <th><input type="number" id="P9" min=0 disabled max=100 onchange="validar(this,max,min,value)"
+                        oninput="validar(this,max,min,value)"></th>
+                <th><input type="number" id="P10" min=0 disabled max=100 onchange="validar(this,max,min,value)"
+                        oninput="validar(this,max,min,value)"></th>
+            </tr>
+            <tr id="start">
+                <th colspan="5"><input type="button" value="Empezar" id="empezar" onclick="empezar()"></th>
+            </tr>
+            <tr id="Terminarturno">
+                <th colspan="5"><input type="button" value="Terminar Turno" id="stepfinish" onclick="calcular(true)">
+                </th>
+            </tr>
+        </table>
+    </div>
+</body>
+
+</html>
